@@ -8,6 +8,7 @@ import {
 import { analyzePRWithClaude } from "./lib/analyzePR"
 import { notifyPRChange } from "./lib/notifyPRChange"
 import { summarizeChanges } from "./lib/summarizeChanges"
+import { getBountyFromIssue } from "./lib/getBountyFromIssue"
 
 export const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN })
 
@@ -20,6 +21,7 @@ export interface AnalyzedPR {
   repo: string
   url: string
   state: "merged" | "opened"
+  bounty?: number | null
 }
 
 async function main() {
@@ -46,6 +48,15 @@ async function main() {
         repo,
         pr.merged_at ? "merged" : "opened",
       )
+      
+      // Try to get bounty from the linked issue
+      // PRs often reference issues with "fixes #123" or "closes #123"
+      const issueMatch = pr.body?.match(/(fixes|closes|resolves)\s+#(\d+)/i)
+      if (issueMatch && issueMatch[2]) {
+        const issueNumber = Number.parseInt(issueMatch[2], 10)
+        analysis.bounty = await getBountyFromIssue(repo, issueNumber)
+      }
+      
       allPRs.push(analysis)
       await notifyPRChange(analysis)
     }

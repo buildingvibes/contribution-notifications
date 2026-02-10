@@ -58,8 +58,9 @@ async function postToHttpWebhook(message: string) {
 }
 
 export async function notifyPRChange(pr: AnalyzedPR) {
+  const bountyText = pr.bounty ? ` [$${pr.bounty} bounty]` : ""
   const message = `
-[${pr.state === "merged" ? "merged" : "opened"}] ${pr.contributor} ${pr.impact} PR in ${pr.repo}: ${pr.url}
+[${pr.state === "merged" ? "merged" : "opened"}] ${pr.contributor} ${pr.impact} PR in ${pr.repo}:${bountyText} ${pr.url}
 ${pr.description.slice(0, 300).replace(/\n/g, " ")}`.trim()
 
   await postToDiscord(message)
